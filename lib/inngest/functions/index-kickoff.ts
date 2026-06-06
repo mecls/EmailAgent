@@ -10,6 +10,14 @@ import {
   markSyncReady,
 } from '@/lib/db/sync'
 
+/**
+ * How far back the background index reaches. Indexing is entirely off the critical
+ * path now: setup feels instant and the agent answers from live Gmail search
+ * (lib/agent/live-search.ts) while this runs. So we index a full year for strong
+ * semantic recall + briefs once it completes; older mail stays reachable live.
+ */
+export const INDEX_WINDOW_DAYS = 365
+
 /** Gmail uses `after:YYYY/MM/DD` (NOT newer_than). UTC date, N days back. */
 function afterQuery(sinceDays: number): string {
   const d = new Date(Date.now() - sinceDays * 86_400_000)
@@ -43,9 +51,9 @@ export const indexKickoff = inngest.createFunction(
   { event: 'index.kickoff' },
   async ({ event, step }) => {
     const { accountId } = event.data
-    // Default to a full year so "catch me up on <person>" can reach correspondence
-    // older than a few months. Callers (e.g. a manual re-index) may widen further.
-    const sinceDays = event.data.sinceDays ?? 365
+    // Index only the recent window for fast setup; older correspondence is reached
+    // via live Gmail search at query time. Callers (e.g. a manual re-index) may widen.
+    const sinceDays = event.data.sinceDays ?? INDEX_WINDOW_DAYS
     const query = afterQuery(sinceDays)
 
     await step.run('begin', async () => {

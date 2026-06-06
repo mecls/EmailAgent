@@ -161,6 +161,86 @@ export async function getMessage(
   }
 }
 
+/** Lighter shape for live search hits — no body (format=metadata). */
+export type MessageMeta = Omit<ParsedMessage, 'bodyText' | 'listUnsubscribe'>
+
+/**
+ * Fetch a single message's headers + snippet (format=metadata, no body parse).
+ * Used by live Gmail search where we only need who/subject/date/snippet, fast.
+ */
+export async function getMessageMetadata(
+  accessToken: string,
+  id: string,
+): Promise<MessageMeta> {
+  const params = new URLSearchParams({ format: 'metadata' })
+  for (const h of ['From', 'To', 'Subject']) params.append('metadataHeaders', h)
+  const m = await gmailFetch<GmailMessage>(
+    accessToken,
+    `/messages/${id}?${params.toString()}`,
+  )
+  const headers = m.payload?.headers ?? []
+  const header = (name: string): string | null => {
+    const h = headers.find((x) => x.name.toLowerCase() === name.toLowerCase())
+    return h?.value ?? null
+  }
+  const fromParsed = parseAddressFull(header('From'))
+  const toParsed = (header('To') ?? '')
+    .split(',')
+    .map((s) => parseAddressFull(s))
+    .filter((x): x is ParsedAddress => x !== null)
+  return {
+    gmailId: m.id,
+    threadId: m.threadId,
+    from: fromParsed?.email ?? null,
+    fromName: fromParsed?.name ?? null,
+    to: toParsed.map((x) => x.email),
+    toNames: toParsed.map((x) => x.name ?? ''),
+    subject: header('Subject'),
+    sentAt: m.internalDate
+      ? new Date(Number(m.internalDate)).toISOString()
+      : null,
+    snippet: decodeHtmlEntities(m.snippet ?? ''),
+    labels: m.labelIds ?? [],
+  }
+}
+
+/** Format a Date as Gmail's `YYYY/MM/DD` (UTC), matching `after:`/`before:`. */
+function toGmailDate(d: Date): string {
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${y}/${m}/${day}`
+}
+
+/**
+ * Build a Gmail `q` for live search. `sender` expands to `(from:X OR to:X)` so a
+ * person matches whether they sent or received the mail (mirrors search_email).
+ * `after`/`before` are ISO strings (lower/upper date bound). Chats excluded.
+ */
+export function buildGmailQuery(opts: {
+  query?: string
+  sender?: string
+  after?: string
+  before?: string
+}): string {
+  const parts: string[] = []
+  if (opts.query?.trim()) parts.push(opts.query.trim())
+  if (opts.sender?.trim()) {
+    const s = opts.sender.trim().replace(/[()"]/g, ' ').trim()
+    if (s) parts.push(`(from:${s} OR to:${s})`)
+  }
+  if (opts.after) {
+    const d = new Date(opts.after)
+    if (!Number.isNaN(d.getTime())) parts.push(`after:${toGmailDate(d)}`)
+  }
+  if (opts.before) {
+    const d = new Date(opts.before)
+    if (!Number.isNaN(d.getTime())) parts.push(`before:${toGmailDate(d)}`)
+  }
+  parts.push('-in:chats')
+  return parts.join(' ')
+}
+
 export interface HistoryResult {
   /** Newly-added/changed message refs since startHistoryId. */
   added: MessageRef[]

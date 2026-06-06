@@ -4,6 +4,7 @@ import { provisionAccount } from '@/lib/auth/provision'
 import { storeGoogleRefresh } from '@/lib/vault'
 import { upsertGoogleCredentials, hasGoogleCredentials } from '@/lib/db/credentials'
 import { inngest } from '@/lib/inngest/client'
+import { INDEX_WINDOW_DAYS } from '@/lib/inngest/functions/index-kickoff'
 import { GMAIL_SCOPE } from '@/lib/google/scopes'
 
 // Node runtime: uses the service-role SDK + Vault rpc. This is the ONLY place
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
     try {
       await inngest.send({
         name: 'index.kickoff',
-        data: { accountId, sinceDays: 365 },
+        data: { accountId, sinceDays: INDEX_WINDOW_DAYS },
       })
     } catch (e) {
       console.error('[callback] index.kickoff enqueue failed', e)

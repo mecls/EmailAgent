@@ -3,6 +3,7 @@ import { getAccessToken } from '@/lib/google/oauth'
 import { listHistory, HistoryExpiredError } from '@/lib/google/gmail'
 import { ReconnectRequiredError } from '@/lib/google/errors'
 import { getHistoryId, setHistoryId } from '@/lib/db/credentials'
+import { INDEX_WINDOW_DAYS } from './index-kickoff'
 
 /**
  * Incremental sync for one account via users.history.list from the stored
@@ -48,7 +49,7 @@ export const freshnessAccount = inngest.createFunction(
     if (outcome.resync) {
       await step.sendEvent('resync', {
         name: 'index.kickoff',
-        data: { accountId, sinceDays: 90 },
+        data: { accountId, sinceDays: INDEX_WINDOW_DAYS },
       })
       return { accountId, resync: true }
     }

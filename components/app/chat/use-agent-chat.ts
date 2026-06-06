@@ -11,6 +11,9 @@ export interface ChatMessage {
   createdAt: number
   /** Accumulated reasoning tokens (display-only); shown in the thinking trace. */
   reasoning?: string
+  /** Transient "searching…"-style status shown during the tool-execution gap.
+   * Cleared as soon as the answer (or more reasoning) starts streaming. */
+  activity?: string
   /** A structured "Catch me up" result, rendered as rich cards in-thread. */
   summary?: InboxSummary
   /** True while a "Catch me up" summary is being generated. */
@@ -20,6 +23,20 @@ export interface ChatMessage {
 interface UseAgentChatOptions {
   /** Seeded opening assistant message (e.g. an indexing-aware greeting). */
   greeting?: string
+}
+
+/** Friendly, jargon-free status for each tool while it runs (no "Gmail"/"search"). */
+function activityFor(tool: string): string {
+  switch (tool) {
+    case 'search_gmail_live':
+      return 'Looking through your emails…'
+    case 'search_email':
+      return 'Searching your inbox…'
+    case 'query_email':
+      return 'Checking your inbox…'
+    default:
+      return 'Working on it…'
+  }
 }
 
 /**
@@ -56,16 +73,27 @@ export function useAgentChat({ greeting }: UseAgentChatOptions = {}) {
     ])
     setIsStreaming(true)
 
+    // Any streamed delta means the tool gap is over — clear the activity status.
     const appendToAgent = (chunk: string) =>
       setMessages((m) =>
-        m.map((x) => (x.id === agentId ? { ...x, body: x.body + chunk } : x)),
+        m.map((x) =>
+          x.id === agentId
+            ? { ...x, body: x.body + chunk, activity: undefined }
+            : x,
+        ),
       )
     const appendReasoningToAgent = (chunk: string) =>
       setMessages((m) =>
         m.map((x) =>
           x.id === agentId
-            ? { ...x, reasoning: (x.reasoning ?? '') + chunk }
+            ? { ...x, reasoning: (x.reasoning ?? '') + chunk, activity: undefined }
             : x,
+        ),
+      )
+    const setActivity = (tool: string) =>
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === agentId ? { ...x, activity: activityFor(tool) } : x,
         ),
       )
     const setAgent = (body: string) =>
@@ -98,6 +126,7 @@ export function useAgentChat({ greeting }: UseAgentChatOptions = {}) {
           let payload: {
             t?: string
             r?: string
+            tool?: string
             done?: boolean
             error?: string
           }
@@ -108,6 +137,7 @@ export function useAgentChat({ greeting }: UseAgentChatOptions = {}) {
           }
           if (payload.r) appendReasoningToAgent(payload.r)
           else if (payload.t) appendToAgent(payload.t)
+          else if (payload.tool) setActivity(payload.tool)
           else if (payload.error)
             setAgent("I couldn't get to your inbox just now. Give it another try in a moment.")
         }

@@ -1,7 +1,7 @@
 import type OpenAI from 'openai'
 import { openai, llmModel, llmMaxTokens } from './llm'
 import { SYSTEM_PROMPT, indexStateNote } from './system-prompt'
-import { SEARCH_TOOL, QUERY_TOOL } from './tools'
+import { SEARCH_TOOL, QUERY_TOOL, SEARCH_LIVE_TOOL } from './tools'
 import type { SyncPhase } from '@/lib/db/sync'
 import { runScopedTool } from './run-scoped-tool'
 
@@ -14,6 +14,9 @@ export interface AgentLoopArgs {
   emit?: (text: string) => void
   /** Called with each reasoning delta (display-only; never fed back to the model). */
   emitReasoning?: (text: string) => void
+  /** Called with a tool's name when it starts executing — lets the UI show a
+   * "searching…" status during the otherwise-silent tool-execution gap. */
+  emitTool?: (name: string) => void
   /** Prior turns, for multi-message chat. */
   history?: OpenAI.Chat.Completions.ChatCompletionMessageParam[]
   /** Current inbox setup phase — frames how empty results are explained. */
@@ -40,6 +43,7 @@ export async function runAgentLoop({
   accountId,
   emit,
   emitReasoning,
+  emitTool,
   history = [],
   indexState,
   signal,
@@ -61,7 +65,7 @@ export async function runAgentLoop({
         model: llmModel(),
         max_tokens: llmMaxTokens(),
         messages,
-        tools: [SEARCH_TOOL, QUERY_TOOL],
+        tools: [SEARCH_TOOL, QUERY_TOOL, SEARCH_LIVE_TOOL],
         tool_choice: 'auto',
         stream: true,
       },
@@ -114,6 +118,7 @@ export async function runAgentLoop({
 
     for (const t of toolCalls) {
       let result: unknown
+      emitTool?.(t.name)
       try {
         const parsed = t.args ? JSON.parse(t.args) : {}
         result = await runScopedTool(t.name, parsed, accountId)

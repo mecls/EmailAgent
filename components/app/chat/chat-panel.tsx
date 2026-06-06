@@ -1,15 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  ArrowUp,
-  Clock,
-  Inbox,
-  RotateCcw,
-  Sparkles,
-  UserSearch,
-  HelpCircle,
-} from 'lucide-react'
+import { ArrowUp, Clock, Inbox, RotateCcw, Sparkles, UserSearch } from 'lucide-react'
 import type { SyncPhase } from '@/lib/db/sync'
 import { useAgentChat, type ChatMessage } from './use-agent-chat'
 import { MarkdownLite } from './markdown-lite'
@@ -27,29 +19,21 @@ const SUGGESTIONS = [
   'Catch me up on my last 10 emails',
 ]
 
-const INDEXING_EXPLAINER =
-  "Getting set up just means I'm quietly reading through your past emails so I can answer in an instant. It runs once on its own in the background — you don't have to do anything, and a bigger inbox simply takes a little longer. As it finishes, my answers get more complete."
-
 function greetingFor(phase: SyncPhase, name: string): string {
   const hi = `Hi ${name} — `
-  if (phase === 'ready') {
-    return `${hi}ask me anything about your inbox. I can recap recent threads, tell you who's waiting on a reply, or dig into a specific person. I only read your mail; I never send.`
-  }
   if (phase === 'error') {
     return `${hi}I'm having trouble reaching your inbox right now. You can reconnect from the banner above, and I'll pick up where you left off.`
   }
-  return `${hi}I'm still getting your inbox ready. You can start asking now, and my answers will fill in as I finish.`
+  // pending/indexing are intentionally indistinguishable from ready — the agent
+  // answers from live search while the background index fills in.
+  return `${hi}ask me anything about your inbox. I can recap recent threads, tell you who's waiting on a reply, or dig into a specific person. I only read your mail; I never send.`
 }
 
 function phaseStatus(phase: SyncPhase): { label: string; tone: string } {
-  switch (phase) {
-    case 'ready':
-      return { label: 'Read-only · Ready', tone: 'bg-emerald-500' }
-    case 'error':
-      return { label: 'Read-only · Reconnect needed', tone: 'bg-amber-500' }
-    default:
-      return { label: 'Read-only · Setting up your inbox…', tone: 'bg-amber-400' }
+  if (phase === 'error') {
+    return { label: 'Read-only · Reconnect needed', tone: 'bg-amber-500' }
   }
+  return { label: 'Read-only · Ready', tone: 'bg-emerald-500' }
 }
 
 const timeFmt = new Intl.DateTimeFormat(undefined, {
@@ -65,7 +49,7 @@ export function ChatPanel({
   firstName?: string
 }) {
   const greeting = useMemo(() => greetingFor(phase, firstName), [phase, firstName])
-  const { messages, isStreaming, send, retry, note, catchMeUp, canRetry } =
+  const { messages, isStreaming, send, retry, catchMeUp, canRetry } =
     useAgentChat({ greeting })
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -132,7 +116,7 @@ export function ChatPanel({
               className={cn(
                 'h-1.5 w-1.5 rounded-full',
                 status.tone,
-                phase !== 'ready' && 'animate-pulse',
+                phase === 'error' && 'animate-pulse',
               )}
               aria-hidden
             />
@@ -163,11 +147,6 @@ export function ChatPanel({
               icon={UserSearch}
               label="Ask about a person"
               onClick={askAboutPerson}
-            />
-            <ActionChip
-              icon={HelpCircle}
-              label="Learn about indexing"
-              onClick={() => note(INDEXING_EXPLAINER)}
             />
           </div>
         ) : null}
@@ -281,11 +260,14 @@ function Bubble({
       <Avatar size="sm" />
       <div className="flex min-w-0 flex-col items-start gap-1">
         <div className="max-w-full rounded-2xl rounded-tl-sm border border-neutral-200/70 bg-neutral-50 px-4 py-3">
-          {message.reasoning || (streamingNow && !message.body) ? (
+          {message.reasoning ||
+          message.activity ||
+          (streamingNow && !message.body) ? (
             <ThinkingTrace
               reasoning={message.reasoning ?? ''}
               answering={message.body.length > 0}
               streaming={streamingNow}
+              activity={message.activity}
             />
           ) : null}
           <MarkdownLite text={message.body} streaming={streamingNow} />

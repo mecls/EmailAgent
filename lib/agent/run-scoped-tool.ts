@@ -1,6 +1,7 @@
-import { SearchInput, QueryInput } from './tools'
+import { SearchInput, QueryInput, LiveSearchInput } from './tools'
 import { embedQuery } from '@/lib/embeddings'
 import { searchEmbeddings, queryThreads, queryMessages } from '@/lib/db/search'
+import { searchGmailLive } from './live-search'
 
 /**
  * Execute a tool call, scoped to a SERVER-DERIVED accountId. The model fills the
@@ -20,6 +21,17 @@ export async function runScopedTool(
       limit: input.limit ?? 10,
       sender: input.sender,
       since: input.since,
+    })
+  }
+
+  if (name === 'search_gmail_live') {
+    const input = LiveSearchInput.parse(rawInput)
+    return searchGmailLive(accountId, {
+      query: input.query,
+      sender: input.sender,
+      since: input.since,
+      until: input.until,
+      limit: input.limit,
     })
   }
 

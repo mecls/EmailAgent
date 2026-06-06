@@ -108,7 +108,7 @@ export default async function AppPage() {
             </h2>
             <p className="mt-1 text-sm text-neutral-500">
               Ask follow-ups, catch up on your latest mail, or dig into anyone —
-              answers from your indexed mail, read-only.
+              answers from your mail, read-only.
             </p>
           </div>
           <ChatPanel phase={phase as SyncPhase} firstName={firstName} />
@@ -157,9 +157,8 @@ export default async function AppPage() {
             </div>
           ) : (
             <p className="px-1 text-sm text-neutral-500">
-              {phase === 'ready'
-                ? 'No brief yet — run one now, or check back after your next scheduled brief.'
-                : 'Your first brief appears automatically once indexing finishes.'}
+              No brief yet — run one now, or check back after your next scheduled
+              brief.
             </p>
           )}
         </section>

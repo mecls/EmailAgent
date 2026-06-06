@@ -27,6 +27,8 @@ import { completeMessages, getSyncState, markSyncReady } from '@/lib/db/sync'
 export const indexBatch = inngest.createFunction(
   {
     id: 'index-batch',
+    // Edge embed load = this × embeddings CONCURRENCY; keep the product modest or
+    // the embed function 546s (WORKER_RESOURCE_LIMIT). 3 × 2 = 6 peak in flight.
     concurrency: { key: 'event.data.accountId', limit: 3 },
     retries: 3,
   },

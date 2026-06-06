@@ -39,6 +39,53 @@ export const SEARCH_TOOL: OpenAI.Chat.Completions.ChatCompletionTool = {
   },
 }
 
+// ── search_gmail_live ─────────────────────────────────────────────────────────
+export const LiveSearchInput = z.object({
+  query: z.string().min(1),
+  sender: z.string().optional(),
+  since: z.string().optional(), // ISO lower date bound
+  until: z.string().optional(), // ISO upper date bound
+  limit: z.number().int().min(1).max(10).optional(),
+})
+export type LiveSearchInput = z.infer<typeof LiveSearchInput>
+
+export const SEARCH_LIVE_TOOL: OpenAI.Chat.Completions.ChatCompletionTool = {
+  type: 'function',
+  function: {
+    name: 'search_gmail_live',
+    description:
+      "Search the user's FULL email history live, including mail older than the last few weeks (search_email only covers recent mail). This is slower than search_email, so use it only when search_email returns little or nothing, or when the user clearly wants older history (e.g. 'what did we discuss last year'). Returns subject, sender name, sender email, date, and snippet. Pass a person's name or email in `sender` to focus on them (matches whether they sent or received).",
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description:
+            'Keywords to search for (Gmail keyword search, not semantic). Use the key terms, names, or phrases.',
+        },
+        sender: {
+          type: 'string',
+          description:
+            'Optional person to focus on — a name or email/domain. Matches whether they sent or received.',
+        },
+        since: {
+          type: 'string',
+          description: 'Optional ISO date lower bound (on/after).',
+        },
+        until: {
+          type: 'string',
+          description: 'Optional ISO date upper bound (on/before).',
+        },
+        limit: {
+          type: 'integer',
+          description: 'Max results (default 10, max 10).',
+        },
+      },
+      required: ['query'],
+    },
+  },
+}
+
 // ── query_email ──────────────────────────────────────────────────────────────
 export const QueryInput = z.object({
   status: z.enum(['awaiting_us', 'awaiting_them', 'closed']).optional(),

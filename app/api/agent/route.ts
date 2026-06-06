@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
           indexState,
           emit: (text) => send({ t: text }),
           emitReasoning: (text) => send({ r: text }),
+          emitTool: (name) => send({ tool: name }),
           signal: req.signal,
         })
         send({ done: true })

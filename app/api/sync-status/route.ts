@@ -4,9 +4,9 @@ import { getSyncState } from '@/lib/db/sync'
 export const runtime = 'nodejs'
 
 /**
- * Lightweight, account-scoped sync snapshot for the live "Setting up your inbox"
- * banner to poll. Returns the drain counter and listing flag so the client can
- * estimate progress and an ETA without any server-held total.
+ * Lightweight, account-scoped sync snapshot. Polled by the silent ready-watcher
+ * (components/app/inbox/sync-banner.tsx) so the app can refresh once background
+ * indexing finishes; the drain counter/listing flag are kept for diagnostics.
  */
 export async function GET() {
   let accountId: string

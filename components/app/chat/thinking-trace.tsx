@@ -16,12 +16,15 @@ export function ThinkingTrace({
   reasoning,
   answering,
   streaming,
+  activity,
 }: {
   reasoning: string
   /** The answer has begun streaming (message body is non-empty). */
   answering: boolean
   /** This is the live, in-flight message. */
   streaming: boolean
+  /** A live "searching…"-style status shown during the tool-execution gap. */
+  activity?: string
 }) {
   const thinking = streaming && !answering
   const [open, setOpen] = useState(thinking)
@@ -55,7 +58,9 @@ export function ThinkingTrace({
         ) : (
           <Brain className="h-3.5 w-3.5" aria-hidden />
         )}
-        <span>{thinking ? 'Thinking…' : 'Thought for a bit'}</span>
+        <span>
+          {thinking ? (activity ?? 'Thinking…') : 'Thought for a bit'}
+        </span>
         {expandable ? (
           open ? (
             <ChevronDown className="h-3.5 w-3.5" aria-hidden />
