@@ -6,10 +6,6 @@ LLM agent answers questions and ships a daily **morning brief**. It never sends
 or modifies mail — read-only scope and no action tools are the core safety
 property.
 
-> Built per `../miraside/docs/email-agent-build-strategy.md`. `miraside` is a
-> reference for patterns only — **never** a runtime dependency. This product has
-> its own Supabase project, Google OAuth client, and deploy.
-
 ## Stack
 
 Next.js 16 (App Router, React 19, TS strict, Tailwind v4) · Supabase (Postgres +
@@ -32,25 +28,6 @@ support tool calling) for the agent loop + brief · Supabase `embed` Edge Functi
 - **Index-light**: store metadata + snippet + embeddings; `body_text` stays NULL
   and is re-fetched from Gmail on demand (smallest breach blast radius).
 
-## Layout
-
-```
-app/          routes: login, connect, app (chat + brief feed), auth/callback, api/{inngest,agent}
-lib/
-  supabase/   browser / server / proxy / service-role clients
-  auth/       session helpers + idempotent account provisioning
-  vault.ts    store/read the Gmail refresh token via SECURITY DEFINER rpc
-  google/     oauth (refresh + invalid_grant), token-cache, gmail REST
-  embeddings.ts  gte-small embeddings via the Supabase `embed` Edge Function
-  agent/      multi-turn tool loop + 2 read tools + system prompt
-  commands/   morning brief · catch me up · who's waiting
-  db/         service-role table accessors (always .eq('account_id', …))
-  inngest/    client + functions
-supabase/functions/embed/  Deno Edge Function: Supabase.ai gte-small (384-dim)
-supabase/migrations/  schema + RLS + SECURITY DEFINER helpers + vector search fn
-emails/       morning-brief React Email template
-components/app/  primitives + chat UI
-```
 
 ## Getting started
 
@@ -62,3 +39,10 @@ npm install
 cp .env.example .env.local   # fill values per SETUP.md
 npm run dev
 ```
+
+<img width="590" height="1278" alt="IMG_5229" src="https://github.com/user-attachments/assets/0b12103f-3ec8-423f-843f-443e4b6176b9" />
+<img width="1151" height="956" alt="IMG_5226" src="https://github.com/user-attachments/assets/a9638697-333c-4ace-b705-993c24ee6fe8" />
+<img width="590" height="1278" alt="IMG_5228" src="https://github.com/user-attachments/assets/92d8aed3-0224-404f-91ca-7c9a1d573042" />
+<img width="590" height="1278" alt="IMG_5232" src="https://github.com/user-attachments/assets/6836e9b5-b37e-4672-8ad4-477a3b36219a" />
+<img width="590" height="1278" alt="IMG_5230" src="https://github.com/user-attachments/assets/1746a992-9dc8-4a2e-a5d8-227b690b7ba2" />
+
