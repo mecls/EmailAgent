@@ -49,6 +49,17 @@ export const env = {
   briefFromEmail: () => required('BRIEF_FROM_EMAIL'),
   opsAlertEmail: () => process.env.OPS_ALERT_EMAIL ?? '',
 
-  // App
-  appBaseUrl: () => process.env.APP_BASE_URL ?? 'http://localhost:3000',
+  // App. Used to build the OAuth redirect (redirectTo). Precedence:
+  //  1. APP_BASE_URL — set this explicitly in prod (must match the URL allow-
+  //     listed in Supabase Auth and stay stable across deploys).
+  //  2. VERCEL_PROJECT_PRODUCTION_URL — Vercel's stable production domain, auto-
+  //     injected, so a deploy without an explicit APP_BASE_URL still works.
+  //  3. localhost — local dev fallback.
+  appBaseUrl: () => {
+    const explicit = process.env.APP_BASE_URL
+    if (explicit) return explicit.replace(/\/$/, '')
+    const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    if (vercel) return `https://${vercel}`
+    return 'http://localhost:3000'
+  },
 } as const
