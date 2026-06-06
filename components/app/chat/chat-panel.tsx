@@ -44,9 +44,12 @@ const timeFmt = new Intl.DateTimeFormat(undefined, {
 export function ChatPanel({
   phase = 'ready',
   firstName = 'there',
+  fill = false,
 }: {
   phase?: SyncPhase
   firstName?: string
+  /** Fill the parent height (full-screen mobile) instead of a bounded card. */
+  fill?: boolean
 }) {
   const greeting = useMemo(() => greetingFor(phase, firstName), [phase, firstName])
   const { messages, isStreaming, send, retry, catchMeUp, canRetry } =
@@ -103,9 +106,23 @@ export function ChatPanel({
   const showSuggestions = !isStreaming && !hasConversation
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.12)]">
-      {/* Header — reinforces "this is a chat", not a search box. */}
-      <div className="flex items-center gap-2.5 border-b border-neutral-200/70 px-4 py-3">
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden',
+        // Fill (mobile): blend into the page canvas — no card, no rounding.
+        fill
+          ? 'h-full min-h-0'
+          : 'rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.12)]',
+      )}
+    >
+      {/* Header — reinforces "this is a chat", not a search box. Hidden on the
+          full-bleed mobile view so the chat reads as part of the page. */}
+      <div
+        className={cn(
+          'flex items-center gap-2.5 border-b border-neutral-200/70 px-4 py-3',
+          fill && 'hidden',
+        )}
+      >
         <Avatar size="md" />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-neutral-900">
@@ -126,7 +143,12 @@ export function ChatPanel({
       </div>
 
       {/* Transcript */}
-      <div className="flex max-h-[34rem] min-h-[22rem] flex-col gap-5 overflow-y-auto px-4 py-5">
+      <div
+        className={cn(
+          'flex flex-col gap-5 overflow-y-auto px-4 py-5',
+          fill ? 'min-h-0 flex-1' : 'max-h-[34rem] min-h-[22rem]',
+        )}
+      >
         <DaySeparator />
         {messages.map((m) => (
           <Bubble
@@ -155,7 +177,13 @@ export function ChatPanel({
       </div>
 
       {/* Composer */}
-      <div className="border-t border-neutral-200/70 bg-neutral-50/50 px-3 pt-3 pb-3">
+      <div
+        className={cn(
+          'border-t border-neutral-200/70 px-3 pt-3',
+          // Fill (mobile): transparent so it sits on the page canvas.
+          fill ? 'pb-safe bg-transparent' : 'bg-neutral-50/50 pb-3',
+        )}
+      >
         {showSuggestions ? (
           <div className="mb-2.5 flex flex-wrap gap-2">
             {SUGGESTIONS.map((q) => (
@@ -184,7 +212,7 @@ export function ChatPanel({
             }}
             rows={1}
             placeholder="Ask anything about your inbox…"
-            className="max-h-32 min-h-[2.75rem] flex-1 resize-none rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-[var(--brand-accent)]"
+            className="max-h-32 min-h-[2.75rem] flex-1 resize-none rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-base outline-none focus:border-[var(--brand-accent)] sm:text-sm"
           />
           <button
             onClick={submit}
@@ -219,7 +247,7 @@ function Bubble({
   if (isUser) {
     return (
       <div className="flex flex-col items-end gap-1">
-        <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-[var(--brand-accent)] px-4 py-2.5 text-sm whitespace-pre-wrap text-[var(--brand-accent-foreground)]">
+        <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-[var(--brand-accent)] px-4 py-2.5 text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[var(--brand-accent-foreground)]">
           {message.body}
         </div>
         <span className="pr-1 text-[11px] text-neutral-400">{time}</span>

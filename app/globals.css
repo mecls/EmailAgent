@@ -36,6 +36,39 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Mobile / PWA foundations ─────────────────────────────────────────────── */
+
+/* Kill the rubber-band / pull-to-refresh bounce so standalone mode feels native. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+/* No grey flash on tap. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS zooms the page when a focused control is < 16px. Force 16px on phones so
+   focusing the composer never zooms. */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Safe-area helpers for sticky chrome that touches the screen edges (notch /
+   home indicator). The max() keeps a sane minimum on devices without insets. */
+.pt-safe {
+  padding-top: max(0.875rem, env(safe-area-inset-top));
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
 /* Quiet eyebrow — sans, sentence case, muted gray. */
 .eyebrow {
   font-family: var(--font-sans);

@@ -28,7 +28,7 @@ export function SetupSplash({ email }: { email?: string | null }) {
   }, [router])
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-5 px-6">
+    <main className="pt-safe pb-safe mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-5 px-6">
       <AnimatePresence mode="wait">
         {stage === 'setup' ? (
           <motion.div

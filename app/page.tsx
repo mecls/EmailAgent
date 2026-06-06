@@ -9,7 +9,7 @@ export default async function Home({
   const { error } = await searchParams
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-6 px-6">
+    <main className="pt-safe pb-safe mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col justify-center gap-6 px-6">
       <p className="eyebrow">{SITE_CONFIG.wordmark}</p>
       <h1 className="font-serif-italic text-4xl text-balance sm:text-5xl">
         {SITE_CONFIG.tagline}

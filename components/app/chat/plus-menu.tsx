@@ -74,7 +74,7 @@ export function PlusMenu({
         {open ? (
           <motion.div
             role="menu"
-            className="absolute bottom-full left-0 z-20 mb-2 w-64 overflow-hidden rounded-xl border border-neutral-200/80 bg-white p-1.5 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.25)]"
+            className="absolute bottom-full left-0 z-20 mb-2 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-neutral-200/80 bg-white p-1.5 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.25)]"
             initial={{ opacity: 0, y: 6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}

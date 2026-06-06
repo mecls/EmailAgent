@@ -8,7 +8,7 @@ export function SummaryBlock({ data }: { data: InboxSummary }) {
   const { summary, tags, checked } = data
   return (
     <div className="rounded-2xl border border-neutral-200/80 bg-white p-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <h3 className="text-sm font-semibold text-neutral-900">Summary</h3>
         {checked.total > 0 ? (
           <span className="text-xs text-neutral-400">

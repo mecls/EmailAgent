@@ -32,7 +32,7 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(
         <code
           key={key++}
-          className="rounded bg-neutral-200/70 px-1 py-0.5 font-mono text-[0.85em]"
+          className="rounded bg-neutral-200/70 px-1 py-0.5 font-mono text-[0.85em] break-words"
         >
           {m[3]}
         </code>,
@@ -185,7 +185,7 @@ export function MarkdownLite({
 }) {
   const blocks = parse(text)
   return (
-    <div className="flex flex-col gap-3 text-sm leading-relaxed text-neutral-800">
+    <div className="flex flex-col gap-3 text-sm leading-relaxed text-neutral-800 [overflow-wrap:anywhere]">
       {blocks.map((block, i) => {
         switch (block.kind) {
           case 'heading':

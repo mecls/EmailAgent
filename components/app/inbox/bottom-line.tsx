@@ -23,22 +23,22 @@ export function BottomLine({
         {data.bottomLine}
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         {standout ? (
           <a
             href={gmailThreadUrl(standout.thread_id)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand-accent)] px-3 py-1.5 text-xs font-medium text-[var(--brand-accent-foreground)] hover:opacity-90"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--brand-accent)] px-3 py-2 text-xs font-medium text-[var(--brand-accent-foreground)] hover:opacity-90 sm:w-auto sm:justify-start sm:py-1.5"
           >
             <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-            View “{standout.subject}”
+            <span className="truncate">View “{standout.subject}”</span>
           </a>
         ) : null}
         <button
           type="button"
           onClick={onRefine}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:border-neutral-300"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-700 hover:border-neutral-300 sm:w-auto sm:justify-start sm:py-1.5"
         >
           <RotateCw className="h-3.5 w-3.5" aria-hidden />
           Refine this summary

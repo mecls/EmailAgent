@@ -91,12 +91,12 @@ export function EmailCard({ card }: { card: SummaryCard }) {
         </p>
       ) : null}
 
-      <div className="mt-3 flex items-center gap-1">
+      <div className="mt-3 flex flex-wrap items-center gap-1">
         <a
           href={gmailThreadUrl(card.thread_id)}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-neutral-800"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-2.5 py-2 text-xs font-medium text-white hover:bg-neutral-800"
         >
           <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           Open in inbox
@@ -106,7 +106,7 @@ export function EmailCard({ card }: { card: SummaryCard }) {
             href={gmailComposeUrl(card.from_addr, card.subject)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
           >
             <Reply className="h-3.5 w-3.5" aria-hidden />
             Reply
@@ -116,7 +116,7 @@ export function EmailCard({ card }: { card: SummaryCard }) {
           type="button"
           onClick={() => setHandled(true)}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-500',
+            'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-neutral-500',
             'hover:bg-neutral-100 hover:text-neutral-700',
           )}
         >

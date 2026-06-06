@@ -21,7 +21,7 @@ export default async function ConnectPage() {
   // post-connect splash that auto-advances into the app.
   if (phase === 'error') {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-5 px-6">
+      <main className="pt-safe pb-safe mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-5 px-6">
         <p className="eyebrow">Reconnect required</p>
         <h1 className="font-serif-italic text-3xl">Your Gmail link expired</h1>
         <p className="text-sm text-neutral-600">
