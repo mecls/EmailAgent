@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import { ScheduleControls, type ScheduleState } from './schedule-controls'
 
 export interface BriefGroup {
@@ -5,11 +6,35 @@ export interface BriefGroup {
   lines: string[]
 }
 
+/** A small status chip shown beside the title once a brief is configured. */
+function StatePill({ tone }: { tone: 'on' | 'paused' }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+        tone === 'on'
+          ? 'bg-emerald-100 text-emerald-700'
+          : 'bg-amber-100 text-amber-700',
+      )}
+    >
+      <span
+        className={cn(
+          'h-1.5 w-1.5 rounded-full',
+          tone === 'on' ? 'bg-emerald-500' : 'bg-amber-500',
+        )}
+        aria-hidden
+      />
+      {tone === 'on' ? 'On' : 'Paused'}
+    </span>
+  )
+}
+
 /**
- * The morning-brief body — title, "Run brief now", schedule controls, and the
- * grouped brief lines. Presentational and reused in two places: inline as a
- * section on desktop, and inside the slide-up sheet on mobile. `runBriefNow` is
- * a server action passed down and wired as a form action.
+ * The morning-brief body — a stacked header (title + status pill + description),
+ * the schedule manager (status card, on/off switch, and the single primary
+ * action), and the most recent brief's grouped lines. Presentational and reused
+ * in two places: inline as a section on desktop, and inside the slide-up sheet
+ * on mobile. `runBriefNow` is a server action passed down to the manager.
  */
 export function BriefContent({
   schedule,
@@ -21,28 +46,22 @@ export function BriefContent({
   runBriefNow: () => Promise<void>
 }) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2.5">
           <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">
             Morning brief
           </h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Get a daily summary of your most important emails, delivered every
-            morning.
-          </p>
+          {schedule.configured ? (
+            <StatePill tone={schedule.paused ? 'paused' : 'on'} />
+          ) : null}
         </div>
-        <form action={runBriefNow}>
-          <button
-            type="submit"
-            className="shrink-0 rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-300"
-          >
-            Run brief now
-          </button>
-        </form>
+        <p className="text-sm text-neutral-500">
+          A daily summary of what matters in your inbox — delivered each morning.
+        </p>
       </div>
 
-      <ScheduleControls state={schedule} />
+      <ScheduleControls state={schedule} runBriefNow={runBriefNow} />
 
       {groups.length > 0 ? (
         <div className="rounded-2xl border border-neutral-200/80 bg-white p-5">
@@ -63,7 +82,7 @@ export function BriefContent({
         </div>
       ) : (
         <p className="px-1 text-sm text-neutral-500">
-          No brief yet — run one now, or check back after your next scheduled
+          No brief yet — send one now, or check back after your next scheduled
           brief.
         </p>
       )}

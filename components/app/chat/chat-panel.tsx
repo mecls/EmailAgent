@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, Clock, Inbox, RotateCcw, Sparkles, UserSearch } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowUp, Bell, Clock, Inbox, RotateCcw, Sparkles, UserSearch } from 'lucide-react'
 import type { SyncPhase } from '@/lib/db/sync'
 import { useAgentChat, type ChatMessage } from './use-agent-chat'
 import { MarkdownLite } from './markdown-lite'
@@ -14,9 +15,10 @@ import { Analyzing } from '@/components/app/inbox/analyzing'
 import { cn } from '@/lib/utils'
 
 const SUGGESTIONS = [
-  "Who's waiting on me?",
-  'What needs my attention today?',
-  'Catch me up on my last 10 emails',
+  { icon: Clock, label: "Who's waiting on me?" },
+  { icon: Inbox, label: 'What needs my attention today?' },
+  { icon: Sparkles, label: 'Recap my last 10 emails' },
+  { icon: Bell, label: "Anything urgent I've missed?" },
 ]
 
 function greetingFor(phase: SyncPhase, name: string): string {
@@ -103,7 +105,6 @@ export function ChatPanel({
     last?.role === 'agent' &&
     !last.summary &&
     !last.loadingSummary
-  const showSuggestions = !isStreaming && !hasConversation
 
   return (
     <div
@@ -149,29 +150,39 @@ export function ChatPanel({
           fill ? 'min-h-0 flex-1' : 'max-h-[34rem] min-h-[22rem]',
         )}
       >
-        <DaySeparator />
-        {messages.map((m) => (
-          <Bubble
-            key={m.id}
-            message={m}
-            isStreaming={isStreaming}
-            live={m === last}
-            onRefineSummary={() => void catchMeUp()}
-          />
-        ))}
+        {hasConversation ? (
+          <>
+            <DaySeparator />
+            {messages.map((m) => (
+              <Bubble
+                key={m.id}
+                message={m}
+                isStreaming={isStreaming}
+                live={m === last}
+                onRefineSummary={() => void catchMeUp()}
+              />
+            ))}
 
-        {showActions ? (
-          <div className="flex flex-wrap gap-2 pl-10">
-            {canRetry ? (
-              <ActionChip icon={RotateCcw} label="Try again" onClick={retry} />
+            {showActions ? (
+              <div className="flex flex-wrap gap-2 pl-10">
+                {canRetry ? (
+                  <ActionChip icon={RotateCcw} label="Try again" onClick={retry} />
+                ) : null}
+                <ActionChip
+                  icon={UserSearch}
+                  label="Ask about a person"
+                  onClick={askAboutPerson}
+                />
+              </div>
             ) : null}
-            <ActionChip
-              icon={UserSearch}
-              label="Ask about a person"
-              onClick={askAboutPerson}
-            />
-          </div>
-        ) : null}
+          </>
+        ) : (
+          <IntroHero
+            firstName={firstName}
+            phase={phase}
+            onPrompt={(q) => void send(q)}
+          />
+        )}
 
         <div ref={bottomRef} />
       </div>
@@ -184,20 +195,6 @@ export function ChatPanel({
           fill ? 'pb-safe bg-transparent' : 'bg-neutral-50/50 pb-3',
         )}
       >
-        {showSuggestions ? (
-          <div className="mb-2.5 flex flex-wrap gap-2">
-            {SUGGESTIONS.map((q) => (
-              <button
-                key={q}
-                onClick={() => void send(q)}
-                className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600 transition-colors hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
         <div className="flex items-end gap-2">
           <PlusMenu items={menuItems} disabled={isStreaming} />
           <textarea
@@ -307,16 +304,76 @@ function Bubble({
 }
 
 function Avatar({ size }: { size: 'sm' | 'md' }) {
+  const dim = size === 'sm' ? 28 : 32
   return (
-    <span
-      className={cn(
-        'flex shrink-0 items-center justify-center rounded-lg bg-[var(--brand-accent)] text-[var(--brand-accent-foreground)]',
-        size === 'sm' ? 'h-7 w-7' : 'h-8 w-8',
-      )}
+    <Image
+      src="/icons/icon-192.png"
+      alt=""
+      width={dim}
+      height={dim}
+      className={cn('shrink-0 rounded-lg', size === 'sm' ? 'h-7 w-7' : 'h-8 w-8')}
       aria-hidden
-    >
-      <Sparkles className={size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
-    </span>
+    />
+  )
+}
+
+/**
+ * The first-run hero, shown until the user sends their first message. Replaces
+ * the lone greeting bubble with a scannable intro: greeting, what the assistant
+ * can do, a persistent read-only reassurance, and a tappable prompt grid (the
+ * quickest path to a successful first query). On an inbox-connection error it
+ * stays calm and points at the reconnect banner instead of offering prompts.
+ */
+function IntroHero({
+  firstName,
+  phase,
+  onPrompt,
+}: {
+  firstName: string
+  phase: SyncPhase
+  onPrompt: (q: string) => void
+}) {
+  const isError = phase === 'error'
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 px-2 py-6 text-center">
+      <Avatar size="md" />
+
+      <div className="flex flex-col items-center gap-2">
+        <h2 className="text-lg font-semibold text-neutral-900">
+          Hi {firstName} 👋
+        </h2>
+        <p className="max-w-sm text-sm text-neutral-500">
+          {isError
+            ? "I'm having trouble reaching your inbox right now. Reconnect from the banner above and I'll pick up where you left off."
+            : 'Ask anything about your inbox, or start with one of these.'}
+        </p>
+      </div>
+
+      {!isError ? (
+        <>
+          <div className="flex w-full max-w-md flex-col gap-2 pt-1">
+            <span className="text-[11px] font-medium tracking-wide text-neutral-400 uppercase">
+              Try
+            </span>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SUGGESTIONS.map(({ icon: Icon, label }) => (
+                <button
+                  key={label}
+                  onClick={() => onPrompt(label)}
+                  className="flex items-center gap-2.5 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
+                >
+                  <Icon
+                    className="h-4 w-4 shrink-0 text-neutral-400"
+                    aria-hidden
+                  />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : null}
+    </div>
   )
 }
 

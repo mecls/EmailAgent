@@ -9,6 +9,7 @@ import { BriefContent, type BriefGroup } from '@/components/app/brief/brief-cont
 import { BriefSheet } from '@/components/app/brief/brief-sheet'
 import type { ScheduleState } from '@/components/app/brief/schedule-controls'
 import { SITE_CONFIG } from '@/lib/site-config'
+import { cn } from '@/lib/utils'
 
 interface SyncInitial {
   phase: SyncPhase
@@ -69,6 +70,21 @@ export function AppShell({
             >
               <Sun className="h-5 w-5" aria-hidden />
             </button>
+            {/* Persistent read-only reassurance — present on every breakpoint so
+                the safety guarantee survives scrolling and the mobile view. */}
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-2.5 py-1 text-xs font-medium text-neutral-500"
+              title="I can read and summarize, but I'll never send, reply, or change anything."
+            >
+              <span
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  phase === 'error' ? 'bg-amber-500' : 'bg-emerald-500',
+                )}
+                aria-hidden
+              />
+              Read-only
+            </span>
             <span className="hidden text-neutral-500 sm:inline">{email}</span>
             <span
               className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-200 text-xs font-medium text-neutral-600"
