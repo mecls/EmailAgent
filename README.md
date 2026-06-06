@@ -39,10 +39,11 @@ npm install
 cp .env.example .env.local   # fill values per SETUP.md
 npm run dev
 ```
+<img width="1151" height="956" alt="IMG_5226" src="https://github.com/user-attachments/assets/116286de-3451-4522-996a-6a33f78a6136" />
+<img width="590" height="1278" alt="IMG_5233" src="https://github.com/user-attachments/assets/0594aadc-7637-4d44-b5c7-15c02c8a6e37" />
+<img width="590" height="1278" alt="IMG_5232" src="https://github.com/user-attachments/assets/de97c801-c950-4aaa-a55b-da10bc5febe4" />
+<img width="590" height="1278" alt="IMG_5234" src="https://github.com/user-attachments/assets/61295c09-e9f4-478e-8133-738f83356790" />
+<img width="590" height="1278" alt="IMG_5230" src="https://github.com/user-attachments/assets/baddd22c-c5df-4304-9b62-f18b9e48f8fb" />
 
-<img width="590" height="1278" alt="IMG_5229" src="https://github.com/user-attachments/assets/0b12103f-3ec8-423f-843f-443e4b6176b9" />
-<img width="1151" height="956" alt="IMG_5226" src="https://github.com/user-attachments/assets/a9638697-333c-4ace-b705-993c24ee6fe8" />
-<img width="590" height="1278" alt="IMG_5228" src="https://github.com/user-attachments/assets/92d8aed3-0224-404f-91ca-7c9a1d573042" />
-<img width="590" height="1278" alt="IMG_5232" src="https://github.com/user-attachments/assets/6836e9b5-b37e-4672-8ad4-477a3b36219a" />
-<img width="590" height="1278" alt="IMG_5230" src="https://github.com/user-attachments/assets/1746a992-9dc8-4a2e-a5d8-227b690b7ba2" />
+
 
