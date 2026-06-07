@@ -66,7 +66,7 @@ export function ChatPanel({
   fill?: boolean
 }) {
   const greeting = useMemo(() => greetingFor(phase, firstName), [phase, firstName])
-  const { messages, isStreaming, send, retry, catchMeUp, canRetry } =
+  const { messages, isStreaming, send, stop, retry, catchMeUp, canRetry } =
     useAgentChat({ greeting })
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -78,7 +78,9 @@ export function ChatPanel({
 
   const submit = () => {
     const text = input.trim()
-    if (!text || isStreaming) return
+    if (!text) return
+    // Asking something new mid-answer interrupts the current one — no waiting.
+    if (isStreaming) stop()
     setInput('')
     void send(text)
   }
@@ -138,16 +140,18 @@ export function ChatPanel({
       className={cn(
         'flex flex-col overflow-hidden',
         // Fill (mobile): blend into the page canvas — no card, no rounding.
+        // Desktop card: a FIXED height so the composer never moves as answers
+        // stream in — the transcript scrolls inside instead of the card growing.
         fill
           ? 'h-full min-h-0'
-          : 'rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.12)]',
+          : 'h-[36rem] rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.12)]',
       )}
     >
       {/* Header — reinforces "this is a chat", not a search box. Hidden on the
           full-bleed mobile view so the chat reads as part of the page. */}
       <div
         className={cn(
-          'flex items-center gap-2.5 border-b border-neutral-200/70 px-4 py-3',
+          'flex shrink-0 items-center gap-2.5 border-b border-neutral-200/70 px-4 py-3',
           fill && 'hidden',
         )}
       >
@@ -170,13 +174,9 @@ export function ChatPanel({
         </div>
       </div>
 
-      {/* Transcript */}
-      <div
-        className={cn(
-          'flex flex-col gap-5 overflow-y-auto px-4 py-5',
-          fill ? 'min-h-0 flex-1' : 'max-h-[34rem] min-h-[22rem]',
-        )}
-      >
+      {/* Transcript — fills the remaining height and scrolls internally, so the
+          composer below stays fixed in place. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-5">
         {hasConversation ? (
           <>
             <DaySeparator />
@@ -217,7 +217,7 @@ export function ChatPanel({
       {/* Composer */}
       <div
         className={cn(
-          'border-t border-neutral-200/70 px-3 pt-3',
+          'shrink-0 border-t border-neutral-200/70 px-3 pt-3',
           // Fill (mobile): transparent so it sits on the page canvas.
           fill ? 'pb-safe bg-transparent' : 'bg-neutral-50/50 pb-3',
         )}
@@ -246,12 +246,16 @@ export function ChatPanel({
             className="h-11 flex-1 resize-none rounded-xl border border-neutral-200 bg-white px-3.5 py-2 text-base outline-none focus:border-[var(--brand-accent)] sm:text-sm"
           />
           <button
-            onClick={submit}
-            disabled={!input.trim() || isStreaming}
-            aria-label="Send"
+            onClick={isStreaming ? stop : submit}
+            disabled={!isStreaming && !input.trim()}
+            aria-label={isStreaming ? 'Stop' : 'Send'}
             className="cta-shadow flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-accent)] text-[var(--brand-accent-foreground)] transition-opacity disabled:opacity-40"
           >
-            <ArrowUp className="h-4 w-4" aria-hidden />
+            {isStreaming ? (
+              <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
+            ) : (
+              <ArrowUp className="h-4 w-4" aria-hidden />
+            )}
           </button>
         </div>
       </div>
