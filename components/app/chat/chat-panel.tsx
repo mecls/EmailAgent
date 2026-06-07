@@ -2,9 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { ArrowUp, Bell, Clock, Inbox, RotateCcw, Sparkles, UserSearch } from 'lucide-react'
+import {
+  ArrowUp,
+  Bell,
+  Clock,
+  Inbox,
+  Loader2,
+  Mic,
+  RotateCcw,
+  Sparkles,
+  Square,
+  UserSearch,
+  Volume2,
+  VolumeX,
+} from 'lucide-react'
 import type { SyncPhase } from '@/lib/db/sync'
 import { useAgentChat, type ChatMessage } from './use-agent-chat'
+import { useVoiceInput, type VoiceStatus } from './use-voice-input'
+import { speak, stopSpeaking } from '@/lib/voice/speak'
+import { useReadAloud } from '@/lib/voice/use-read-aloud'
 import { MarkdownLite } from './markdown-lite'
 import { ThinkingTrace } from './thinking-trace'
 import { PlusMenu, type PlusMenuItem } from './plus-menu'
@@ -71,6 +87,40 @@ export function ChatPanel({
     void send(text)
   }
 
+  // Voice dictation: transcribe on-device, then drop the text into the composer
+  // so it can be reviewed/edited before sending (append if there's already text).
+  const voice = useVoiceInput({
+    onResult: (text) => {
+      const clean = text.trim()
+      if (!clean) return
+      setInput((prev) => (prev.trim() ? `${prev.trim()} ${clean}` : clean))
+      inputRef.current?.focus()
+    },
+  })
+  const onMic = () => {
+    if (voice.status === 'recording') voice.stop()
+    else if (voice.status === 'idle' || voice.status === 'error') void voice.start()
+  }
+
+  // Optional, free "read answers aloud" via the browser's voice. Off by default;
+  // preference persists across sessions (SSR-safe store).
+  const {
+    enabled: readAloud,
+    supported: ttsSupported,
+    toggle: toggleReadAloud,
+  } = useReadAloud()
+
+  // Speak the answer once a turn finishes; cancel speech when a new one starts.
+  const wasStreaming = useRef(false)
+  useEffect(() => {
+    if (isStreaming) stopSpeaking()
+    if (wasStreaming.current && !isStreaming && readAloud) {
+      const lastMsg = messages[messages.length - 1]
+      if (lastMsg?.role === 'agent' && lastMsg.body) speak(lastMsg.body)
+    }
+    wasStreaming.current = isStreaming
+  }, [isStreaming, messages, readAloud])
+
   const askAboutPerson = () => {
     setInput('Catch me up on ')
     inputRef.current?.focus()
@@ -94,6 +144,19 @@ export function ChatPanel({
       label: 'What needs my attention today?',
       onClick: () => void send('What needs my attention today?'),
     },
+    ...(ttsSupported
+      ? [
+          {
+            icon: readAloud ? VolumeX : Volume2,
+            label: readAloud ? 'Turn off read-aloud' : 'Read answers aloud',
+            description: readAloud
+              ? "Stop speaking the assistant's replies"
+              : 'Hear replies spoken with your device voice',
+            divider: true,
+            onClick: toggleReadAloud,
+          } satisfies PlusMenuItem,
+        ]
+      : []),
   ]
 
   const status = phaseStatus(phase)
@@ -195,8 +258,15 @@ export function ChatPanel({
           fill ? 'pb-safe bg-transparent' : 'bg-neutral-50/50 pb-3',
         )}
       >
+        {voice.supported && voice.status !== 'idle' ? (
+          <VoiceStatusLine status={voice.status} progress={voice.modelProgress} error={voice.error} />
+        ) : null}
+
         <div className="flex items-end gap-2">
           <PlusMenu items={menuItems} disabled={isStreaming} />
+          {voice.supported ? (
+            <VoiceButton status={voice.status} disabled={isStreaming} onClick={onMic} />
+          ) : null}
           <textarea
             ref={inputRef}
             value={input}
@@ -226,6 +296,85 @@ export function ChatPanel({
 }
 
 // ── pieces ───────────────────────────────────────────────────────────────────
+
+function VoiceButton({
+  status,
+  disabled,
+  onClick,
+}: {
+  status: VoiceStatus
+  disabled: boolean
+  onClick: () => void
+}) {
+  const recording = status === 'recording'
+  const busy = status === 'loading-model' || status === 'transcribing'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || busy}
+      aria-label={recording ? 'Stop recording' : 'Dictate a question'}
+      aria-pressed={recording}
+      className={cn(
+        'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:opacity-40',
+        recording
+          ? 'border-red-300 bg-red-50 text-red-600'
+          : 'border-neutral-200 bg-white text-neutral-500 hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]',
+      )}
+    >
+      {busy ? (
+        <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+      ) : recording ? (
+        <Square className="h-4 w-4 fill-current" aria-hidden />
+      ) : (
+        <Mic className="h-5 w-5" aria-hidden />
+      )}
+    </button>
+  )
+}
+
+function VoiceStatusLine({
+  status,
+  progress,
+  error,
+}: {
+  status: VoiceStatus
+  progress: number
+  error: string | null
+}) {
+  if (status === 'error') {
+    return (
+      <p className="mb-2 px-1 text-xs text-amber-600">
+        {error ?? 'Voice ran into a problem. Give it another try.'}
+      </p>
+    )
+  }
+  if (status === 'recording') {
+    return (
+      <p className="mb-2 flex items-center gap-2 px-1 text-xs text-neutral-500">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" aria-hidden />
+        Listening… tap the mic to stop.
+      </p>
+    )
+  }
+  if (status === 'loading-model') {
+    return (
+      <p className="mb-2 flex items-center gap-2 px-1 text-xs text-neutral-500">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+        Setting up voice (one-time)… {progress}%
+      </p>
+    )
+  }
+  if (status === 'transcribing') {
+    return (
+      <p className="mb-2 flex items-center gap-2 px-1 text-xs text-neutral-500">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+        Transcribing…
+      </p>
+    )
+  }
+  return null
+}
 
 function Bubble({
   message,
