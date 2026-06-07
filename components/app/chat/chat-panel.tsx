@@ -13,14 +13,10 @@ import {
   Sparkles,
   Square,
   UserSearch,
-  Volume2,
-  VolumeX,
 } from 'lucide-react'
 import type { SyncPhase } from '@/lib/db/sync'
 import { useAgentChat, type ChatMessage } from './use-agent-chat'
 import { useVoiceInput, type VoiceStatus } from './use-voice-input'
-import { speak, stopSpeaking } from '@/lib/voice/speak'
-import { useReadAloud } from '@/lib/voice/use-read-aloud'
 import { MarkdownLite } from './markdown-lite'
 import { ThinkingTrace } from './thinking-trace'
 import { PlusMenu, type PlusMenuItem } from './plus-menu'
@@ -102,25 +98,6 @@ export function ChatPanel({
     else if (voice.status === 'idle' || voice.status === 'error') void voice.start()
   }
 
-  // Optional, free "read answers aloud" via the browser's voice. Off by default;
-  // preference persists across sessions (SSR-safe store).
-  const {
-    enabled: readAloud,
-    supported: ttsSupported,
-    toggle: toggleReadAloud,
-  } = useReadAloud()
-
-  // Speak the answer once a turn finishes; cancel speech when a new one starts.
-  const wasStreaming = useRef(false)
-  useEffect(() => {
-    if (isStreaming) stopSpeaking()
-    if (wasStreaming.current && !isStreaming && readAloud) {
-      const lastMsg = messages[messages.length - 1]
-      if (lastMsg?.role === 'agent' && lastMsg.body) speak(lastMsg.body)
-    }
-    wasStreaming.current = isStreaming
-  }, [isStreaming, messages, readAloud])
-
   const askAboutPerson = () => {
     setInput('Catch me up on ')
     inputRef.current?.focus()
@@ -144,19 +121,6 @@ export function ChatPanel({
       label: 'What needs my attention today?',
       onClick: () => void send('What needs my attention today?'),
     },
-    ...(ttsSupported
-      ? [
-          {
-            icon: readAloud ? VolumeX : Volume2,
-            label: readAloud ? 'Turn off read-aloud' : 'Read answers aloud',
-            description: readAloud
-              ? "Stop speaking the assistant's replies"
-              : 'Hear replies spoken with your device voice',
-            divider: true,
-            onClick: toggleReadAloud,
-          } satisfies PlusMenuItem,
-        ]
-      : []),
   ]
 
   const status = phaseStatus(phase)
@@ -278,8 +242,8 @@ export function ChatPanel({
               }
             }}
             rows={1}
-            placeholder="Ask anything about your inbox…"
-            className="max-h-32 min-h-[2.75rem] flex-1 resize-none rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-base outline-none focus:border-[var(--brand-accent)] sm:text-sm"
+            placeholder="Ask anything…"
+            className="h-11 flex-1 resize-none rounded-xl border border-neutral-200 bg-white px-3.5 py-2 text-base outline-none focus:border-[var(--brand-accent)] sm:text-sm"
           />
           <button
             onClick={submit}
